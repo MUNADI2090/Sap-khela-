@@ -1,215 +1,1341 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AETHERIA Snake OS</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body {
-            background-color: #020b07;
-            color: #ecfdf5;
-            font-family: 'Plus Jakarta Sans', sans-serif, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        .container {
-            text-align: center;
-            background: rgba(6, 28, 19, 0.65);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 20px;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-        h1 { font-size: 1.5rem; margin-bottom: 10px; color: #34d399; letter-spacing: 2px; }
-        .score-board {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            font-weight: bold;
-            color: #a7f3d0;
-        }
-        canvas {
-            background: #010805;
-            border: 2px solid rgba(16, 185, 129, 0.4);
-            border-radius: 12px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
-            display: block;
-            margin: 0 auto;
-        }
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(3, 70px);
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-        .ctrl-btn {
-            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-            color: white;
-            border: none;
-            padding: 18px;
-            font-size: 1.2rem;
-            border-radius: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(16,185,129,0.3);
-            transition: transform 0.1s;
-        }
-        .ctrl-btn:active { transform: scale(0.92); }
-        .empty { visibility: hidden; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>3D Bugatti Village Driving Simulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #06100c;
+      touch-action: none;
+    }
+    #game-container {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      inset: 0;
+    }
+
+    /* HUD Overlay */
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px;
+      z-index: 10;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .glass-panel {
+      background: rgba(6, 24, 18, 0.82);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.45);
+    }
+    .score-box {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #6ee7b7;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+    .combo-badge {
+      background: linear-gradient(135deg, #f59e0b, #dc2626);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    /* Action Buttons Row (Camera, Walk/Drive, Color, Day/Night) */
+    .quick-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+    .action-btn {
+      background: rgba(10, 35, 26, 0.88);
+      border: 1px solid rgba(52, 211, 153, 0.5);
+      color: #ecfdf5;
+      padding: 7px 11px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .action-btn:active {
+      transform: scale(0.93);
+      background: #10b981;
+      color: #022c22;
+    }
+
+    /* Center Dynamic Popup Banner */
+    #bonus-popup {
+      align-self: center;
+      background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.92), transparent);
+      padding: 6px 28px;
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 2px 6px #000;
+      letter-spacing: 1px;
+      opacity: 0;
+      transform: translateY(-10px) scale(0.9);
+      transition: 0.25s;
+      pointer-events: none;
+    }
+    #bonus-popup.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Bottom Controls & Speedometer */
+    .bottom-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Speedometer + Nitro Bar */
+    .dashboard-bar {
+      align-self: center;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(6, 22, 16, 0.88);
+      border: 1.5px solid rgba(52, 211, 153, 0.5);
+      padding: 6px 16px;
+      border-radius: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    .speed-readout {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    #speed-val {
+      font-size: 24px;
+      font-weight: 900;
+      color: #34d399;
+      min-width: 48px;
+      text-align: right;
+    }
+    .speed-unit {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    .nitro-wrap {
+      width: 90px;
+    }
+    .nitro-label {
+      font-size: 9px;
+      color: #38bdf8;
+      font-weight: 800;
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .nitro-bg {
+      width: 100%;
+      height: 7px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #nitro-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7, #38bdf8, #e0f2fe);
+      transition: width 0.1s;
+    }
+
+    /* Touch Pedals & Steering */
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      pointer-events: auto;
+      padding-bottom: 4px;
+    }
+    .steer-group, .pedal-group {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .ctrl-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(15, 35, 28, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+      touch-action: manipulation;
+    }
+    .ctrl-btn span {
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 2px;
+      color: #cbd5e1;
+    }
+    .ctrl-btn:active, .ctrl-btn.pressed {
+      transform: scale(0.92);
+      border-color: #34d399;
+      background: rgba(16, 185, 129, 0.35);
+    }
+    .btn-gas {
+      height: 82px;
+      width: 68px;
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.45), rgba(5, 150, 105, 0.85));
+      border-color: #34d399;
+    }
+    .btn-brake {
+      height: 64px;
+      width: 58px;
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.4), rgba(185, 28, 28, 0.85));
+      border-color: #f87171;
+    }
+    .btn-nitro {
+      height: 56px;
+      width: 56px;
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.4), rgba(2, 132, 199, 0.85));
+      border-color: #38bdf8;
+      font-size: 16px;
+    }
+    .btn-drift {
+      height: 56px;
+      width: 56px;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.4), rgba(217, 119, 6, 0.85));
+      border-color: #fbbf24;
+      font-size: 16px;
+    }
+
+    /* Start Screen Overlay */
+    #start-modal {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(6, 40, 28, 0.92), rgba(2, 12, 9, 0.98));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 18px;
+    }
+    .modal-box {
+      background: rgba(8, 28, 20, 0.95);
+      border: 2px solid #10b981;
+      border-radius: 20px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.35);
+    }
+    .modal-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #34d399;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .modal-desc {
+      font-size: 13px;
+      color: #a7f3d0;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .feature-list {
+      text-align: left;
+      background: rgba(255,255,255,0.05);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #e2e8f0;
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+    .feature-list b {
+      color: #fbbf24;
+    }
+    .start-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 900;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>SNAKE OS</h1>
-    <div class="score-board">
-        <span>SCORE: <span id="score">0</span></span>
-        <span>HIGH: <span id="highScore">0</span></span>
+  <div id="game-container"></div>
+
+  <!-- Responsive Non-Overlapping HUD -->
+  <div id="hud">
+    <div class="top-bar">
+      <div class="stats-row">
+        <div class="glass-panel score-box">
+          <div class="stat-item">
+            <span class="stat-label">ড্রাইভিং পয়েন্ট</span>
+            <span class="stat-val" id="score-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">চেকপয়েন্ট</span>
+            <span class="stat-val" id="cp-val" style="color:#34d399;">0</span>
+          </div>
+          <div class="combo-badge" id="combo-val">x1</div>
+        </div>
+
+        <div class="glass-panel" style="text-align:right;">
+          <div class="stat-label" id="mode-label">🚗 BUGATTI CHIRON</div>
+          <div style="font-size:12px; color:#fde047; font-weight:800;" id="cam-label">Chase Cam</div>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="action-btn" onclick="switchCamera()">🎥 ক্যামেরা (C)</button>
+        <button class="action-btn" id="walk-btn" onclick="toggleWalkMode()">🚶 গাড়ি থেকে নামুন (F)</button>
+        <button class="action-btn" onclick="changeCarColor()">🎨 কালার বদলান</button>
+        <button class="action-btn" onclick="toggleDayNight()">🌙 দিন/রাত</button>
+      </div>
     </div>
-    
-    <canvas id="gameCanvas" width="360" height="360"></canvas>
 
-    <div class="controls">
-        <div class="empty"></div>
-        <button class="ctrl-btn" onclick="changeDir('UP')">▲</button>
-        <div class="empty"></div>
-        <button class="ctrl-btn" onclick="changeDir('LEFT')">◀</button>
-        <button class="ctrl-btn" onclick="changeDir('DOWN')">▼</button>
-        <button class="ctrl-btn" onclick="changeDir('RIGHT')">▶</button>
+    <div id="bonus-popup">NEAR MISS +100!</div>
+
+    <div class="bottom-area">
+      <div class="dashboard-bar">
+        <div class="speed-readout">
+          <span id="speed-val">0</span>
+          <span class="speed-unit">KM/H</span>
+        </div>
+        <div class="nitro-wrap">
+          <div class="nitro-label"><span>NITRO BOOST</span><span id="nitro-pct">100%</span></div>
+          <div class="nitro-bg"><div id="nitro-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="steer-group">
+          <button class="ctrl-btn" id="btn-left">◀<span>বাম</span></button>
+          <button class="ctrl-btn" id="btn-right">▶<span>ডান</span></button>
+        </div>
+
+        <div class="pedal-group">
+          <button class="ctrl-btn btn-drift" id="btn-drift">🛞<span>DRIFT</span></button>
+          <button class="ctrl-btn btn-nitro" id="btn-nitro">⚡<span>NOS</span></button>
+          <button class="ctrl-btn btn-brake" id="btn-brake">🔴<span>ব্রেক/ব্যাক</span></button>
+          <button class="ctrl-btn btn-gas" id="btn-gas">🟢<span>গ্যাস</span></button>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const gridSize = 20;
-    const tileCount = canvas.width / gridSize;
+  <!-- Start Screen -->
+  <div id="start-modal">
+    <div class="modal-box">
+      <div class="modal-title">🏎️ BUGATTI VILLAGE 3D</div>
+      <div class="modal-desc">
+        রিয়েলিস্টিক থ্রিডি গ্রাম, পিচ ঢালাই রাস্তা, ব্রিজ এবং সুপারকার ড্রাইভিং সিমুলেটর!
+      </div>
+      <div class="feature-list">
+        ✅ <b>৪টি ক্যামেরা ভিউ:</b> গাড়ির পিছন, ভেতরের ড্রাইভার ভিউ, সাইড ও ড্রোন ভিউ।<br>
+        ✅ <b>৩ডি মানুষ (Walk Mode):</b> গাড়ি থেকে নেমে গ্রামে হাঁটাহাঁটি করা যাবে! <br>
+        ✅ <b>স্কোর সিস্টেম:</b> হাই-স্পিড ড্রাইভিং, ড্রিফট, গোল্ডেন রিং এবং Near Miss পয়েন্ট।<br>
+        ✅ <b>পিসি ও মোবাইল:</b> টাচ পেডাল অথবা কীবোর্ড (WASD / Arrow + Space + Shift)।
+      </div>
+      <button class="start-btn" onclick="startExperience()">গেম শুরু করুন (START 3D)</button>
+    </div>
+  </div>
 
-    let snake = [{ x: 10, y: 10 }];
-    let food = { x: 5, y: 5 };
-    let dx = 0;
-    let dy = 0;
+  <!-- Three.js WebGL Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    // --- Audio Engine (Realistic V16 Engine Sound Synthesizer) ---
+    let audioCtx = null;
+    let engineOsc = null;
+    let engineGain = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      engineOsc = audioCtx.createOscillator();
+      engineGain = audioCtx.createGain();
+      engineOsc.type = 'sawtooth';
+      engineOsc.frequency.value = 55;
+      engineGain.gain.value = 0.04;
+      engineOsc.connect(engineGain);
+      engineGain.connect(audioCtx.destination);
+      engineOsc.start();
+    }
+
+    function updateEngineSound(speedRatio, isDriving) {
+      if (!audioCtx || !engineOsc) return;
+      const now = audioCtx.currentTime;
+      if (!isDriving) {
+        engineGain.gain.setTargetAtTime(0.01, now, 0.1);
+        engineOsc.frequency.setTargetAtTime(45, now, 0.1);
+        return;
+      }
+      const baseFreq = 55 + Math.abs(speedRatio) * 195;
+      engineOsc.frequency.setTargetAtTime(baseFreq, now, 0.05);
+      engineGain.gain.setTargetAtTime(0.05 + Math.abs(speedRatio) * 0.06, now, 0.08);
+    }
+
+    function playBonusTone() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.18);
+      g.gain.setValueAtTime(0.15, now);
+      g.gain.linearRampToValueAtTime(0.01, now + 0.18);
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    }
+
+    // --- Three.js Scene Setup ---
+    const container = document.getElementById('game-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.FogExp2(0x87ceeb, 0.0014);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 1200);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- Lighting ---
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x2d4c1e, 0.75);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+    sunLight.position.set(180, 260, 140);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 700;
+    const d = 220;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    scene.add(sunLight);
+
+    // --- Build 3D Village Environment ---
+    const colliders = [];
+    const streetBulbs = [];
+
+    // Grass Ground
+    const groundGeo = new THREE.PlaneGeometry(2400, 2400);
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x2e5a27 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Road Network Builder
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const curbMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+
+    function createRoad(x, z, width, length, isHorizontal) {
+      const road = new THREE.Mesh(new THREE.PlaneGeometry(width, length), roadMat);
+      road.rotation.x = -Math.PI / 2;
+      road.position.set(x, 0.05, z);
+      road.receiveShadow = true;
+      scene.add(road);
+
+      // Center dashed markings
+      const stripeCount = Math.floor(length / 20);
+      for (let i = -stripeCount / 2; i < stripeCount / 2; i++) {
+        const stripe = new THREE.Mesh(
+          new THREE.PlaneGeometry(isHorizontal ? 8 : 0.45, isHorizontal ? 0.45 : 8),
+          lineMat
+        );
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.position.set(
+          isHorizontal ? x + i * 20 : x,
+          0.09,
+          isHorizontal ? z : z + i * 20
+        );
+        scene.add(stripe);
+      }
+    }
+
+    // Main North-South Highway & East-West Village Roads
+    createRoad(0, 0, 22, 2000, false);
+    createRoad(0, 0, 2000, 22, true);
+    createRoad(0, -350, 1400, 18, true);
+    createRoad(0, 350, 1400, 18, true);
+    createRoad(-350, 0, 18, 1400, false);
+    createRoad(350, 0, 18, 1400, false);
+
+    // Scenic Village River
+    const riverMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.2,
+      metalness: 0.4
+    });
+    const river = new THREE.Mesh(new THREE.PlaneGeometry(2400, 48), riverMat);
+    river.rotation.x = -Math.PI / 2;
+    river.position.set(0, 0.03, -175);
+    scene.add(river);
+
+    // Bridge Guardrails over River
+    function createBridgeRails(xCenter, zCenter) {
+      const railGeo = new THREE.BoxGeometry(1.2, 2.5, 54);
+      const railMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.5 });
+      const leftRail = new THREE.Mesh(railGeo, railMat);
+      leftRail.position.set(xCenter - 11.5, 1.3, zCenter);
+      const rightRail = new THREE.Mesh(railGeo, railMat);
+      rightRail.position.set(xCenter + 11.5, 1.3, zCenter);
+      scene.add(leftRail, rightRail);
+    }
+    createBridgeRails(0, -175);
+    createBridgeRails(-350, -175);
+    createBridgeRails(350, -175);
+
+    // 3D Village Houses Generator
+    const wallColors = [0xfef3c7, 0xe0f2fe, 0xfce7f3, 0xd1fae5, 0xffedd5, 0xf1f5f9];
+    const roofColors = [0x991b1b, 0x1e3a8a, 0x065f46, 0x7c2d12, 0x374151];
+
+    function createVillageHouse(x, z, rotY) {
+      const group = new THREE.Group();
+      const w = 12 + Math.random() * 6;
+      const h = 7 + Math.random() * 4;
+      const d = 10 + Math.random() * 5;
+
+      const bodyMat = new THREE.MeshLambertMaterial({
+        color: wallColors[Math.floor(Math.random() * wallColors.length)]
+      });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bodyMat);
+      body.position.y = h / 2;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+
+      // Pitched Roof
+      const roofMat = new THREE.MeshLambertMaterial({
+        color: roofColors[Math.floor(Math.random() * roofColors.length)]
+      });
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.78, 5, 4), roofMat);
+      roof.position.y = h + 2.5;
+      roof.rotation.y = Math.PI / 4;
+      roof.castShadow = true;
+      group.add(roof);
+
+      // Door & Glowing Windows
+      const door = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 4.2, 0.3),
+        new THREE.MeshLambertMaterial({ color: 0x451a03 })
+      );
+      door.position.set(0, 2.1, d / 2 + 0.1);
+      group.add(door);
+
+      const winMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      const win1 = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 0.3), winMat);
+      win1.position.set(-w * 0.28, h * 0.55, d / 2 + 0.1);
+      const win2 = win1.clone();
+      win2.position.x = w * 0.28;
+      group.add(win1, win2);
+
+      group.position.set(x, 0, z);
+      group.rotation.y = rotY;
+      scene.add(group);
+
+      colliders.push({ x, z, radius: Math.max(w, d) * 0.55 });
+    }
+
+    // 3D Village Trees Generator
+    function createTree(x, z) {
+      const group = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.6, 0.9, 5, 7),
+        new THREE.MeshLambertMaterial({ color: 0x5c4033 })
+      );
+      trunk.position.y = 2.5;
+      trunk.castShadow = true;
+      group.add(trunk);
+
+      const leavesMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+      const c1 = new THREE.Mesh(new THREE.SphereGeometry(3.8, 8, 8), leavesMat);
+      c1.position.y = 6.5;
+      c1.castShadow = true;
+      const c2 = new THREE.Mesh(new THREE.SphereGeometry(2.8, 8, 8), leavesMat);
+      c2.position.set(1.4, 8.2, 0.8);
+      group.add(c1, c2);
+
+      group.position.set(x, 0, z);
+      scene.add(group);
+      colliders.push({ x, z, radius: 1.5 });
+    }
+
+    // Street Lamps along Main Roads
+    function createStreetLamp(x, z) {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.28, 11, 6),
+        new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7 })
+      );
+      pole.position.set(x, 5.5, z);
+      scene.add(pole);
+
+      const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.65, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      bulb.position.set(x, 11.2, z);
+      scene.add(bulb);
+      streetBulbs.push(bulb);
+    }
+
+    for (let i = -700; i <= 700; i += 70) {
+      if (Math.abs(i + 175) > 35 && Math.abs(i) > 25) {
+        createStreetLamp(14, i);
+        createStreetLamp(-14, i);
+      }
+    }
+
+    // Populate Village Houses & Trees away from roads and river
+    function isSafeSpot(x, z, pad = 26) {
+      if (Math.abs(x) < pad || Math.abs(z) < pad) return false;
+      if (Math.abs(z + 350) < pad || Math.abs(z - 350) < pad) return false;
+      if (Math.abs(x + 350) < pad || Math.abs(x - 350) < pad) return false;
+      if (Math.abs(z + 175) < 38) return false;
+      return true;
+    }
+
+    for (let i = 0; i < 65; i++) {
+      const hx = (Math.random() - 0.5) * 1100;
+      const hz = (Math.random() - 0.5) * 1100;
+      if (isSafeSpot(hx, hz, 34)) {
+        createVillageHouse(hx, hz, Math.random() * Math.PI * 2);
+      }
+    }
+
+    for (let i = 0; i < 190; i++) {
+      const tx = (Math.random() - 0.5) * 1300;
+      const tz = (Math.random() - 0.5) * 1300;
+      if (isSafeSpot(tx, tz, 20)) {
+        createTree(tx, tz);
+      }
+    }
+
+    // Distant Mountains Ring
+    const mountMat = new THREE.MeshLambertMaterial({ color: 0x1e3a2f });
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) {
+      const mx = Math.cos(a) * 980;
+      const mz = Math.sin(a) * 980;
+      const h = 110 + Math.random() * 90;
+      const m = new THREE.Mesh(new THREE.ConeGeometry(160, h, 5), mountMat);
+      m.position.set(mx, h / 2 - 5, mz);
+      scene.add(m);
+    }
+
+    // --- Build Detailed 3D Bugatti Chiron Hypercar ---
+    const carGroup = new THREE.Group();
+    const carColors = [0x0284c7, 0x10b981, 0xd97706, 0x111827, 0xdc2626];
+    let colorIdx = 0;
+
+    const mainPaintMat = new THREE.MeshStandardMaterial({
+      color: carColors[0],
+      metalness: 0.85,
+      roughness: 0.18
+    });
+    const carbonMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      metalness: 0.6,
+      roughness: 0.35
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x09131c,
+      metalness: 0.95,
+      roughness: 0.08,
+      transparent: true,
+      opacity: 0.82
+    });
+
+    // Lower Aerodynamic Chassis
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.65, 5.4), mainPaintMat);
+    chassis.position.y = 0.65;
+    chassis.castShadow = true;
+    carGroup.add(chassis);
+
+    // Carbon Rear & Side Trim (Bugatti Two-Tone Signature)
+    const rearCarbon = new THREE.Mesh(new THREE.BoxGeometry(2.54, 0.68, 2.3), carbonMat);
+    rearCarbon.position.set(0, 0.66, -1.55);
+    carGroup.add(rearCarbon);
+
+    // Sleek Glass Cabin
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.62, 2.5), glassMat);
+    cabin.position.set(0, 1.22, -0.15);
+    carGroup.add(cabin);
+
+    // Bugatti Front Horseshoe Grille
+    const grille = new THREE.Mesh(
+      new THREE.BoxGeometry(0.85, 0.52, 0.15),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9 })
+    );
+    grille.position.set(0, 0.58, 2.71);
+    carGroup.add(grille);
+
+    // Quad LED Headlights
+    const headLightMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+    const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.15), headLightMat);
+    hlLeft.position.set(-0.82, 0.76, 2.71);
+    const hlRight = hlLeft.clone();
+    hlRight.position.x = 0.82;
+    carGroup.add(hlLeft, hlRight);
+
+    // Full-Width Glowing Red LED Taillight Bar
+    const tailLight = new THREE.Mesh(
+      new THREE.BoxGeometry(2.25, 0.16, 0.15),
+      new THREE.MeshBasicMaterial({ color: 0xff1e42 })
+    );
+    tailLight.position.set(0, 0.82, -2.71);
+    carGroup.add(tailLight);
+
+    // Active Rear Wing Spoiler
+    const spoilerWing = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.1, 0.48), carbonMat);
+    spoilerWing.position.set(0, 1.26, -2.45);
+    carGroup.add(spoilerWing);
+
+    // Nitro Exhaust Flame Mesh
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0 });
+    const nitroFlame = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.6, 8), flameMat);
+    nitroFlame.rotation.x = -Math.PI / 2;
+    nitroFlame.position.set(0, 0.5, -3.5);
+    carGroup.add(nitroFlame);
+
+    // 4 Rotating 3D Wheels
+    const wheels = [];
+    const wheelGeo = new THREE.CylinderGeometry(0.48, 0.48, 0.38, 16);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const tireMat = new THREE.MeshLambertMaterial({ color: 0x111827 });
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.2 });
+
+    const wheelPositions = [
+      { x: -1.28, y: 0.48, z: 1.68, front: true },
+      { x: 1.28, y: 0.48, z: 1.68, front: true },
+      { x: -1.28, y: 0.48, z: -1.68, front: false },
+      { x: 1.28, y: 0.48, z: -1.68, front: false }
+    ];
+
+    wheelPositions.forEach(pos => {
+      const wGroup = new THREE.Group();
+      const tire = new THREE.Mesh(wheelGeo, tireMat);
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.4, 8).rotateZ(Math.PI / 2), rimMat);
+      wGroup.add(tire, rim);
+      wGroup.position.set(pos.x, pos.y, pos.z);
+      carGroup.add(wGroup);
+      wheels.push({ group: wGroup, front: pos.front });
+    });
+
+    carGroup.position.set(0, 0, 20);
+    scene.add(carGroup);
+
+    // --- Build 3D Human Character (Driver & Walker) ---
+    const humanGroup = new THREE.Group();
+
+    // Head & Hair & Sunglasses
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 12, 12),
+      new THREE.MeshLambertMaterial({ color: 0xf1c27d })
+    );
+    head.position.y = 2.05;
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.34, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      new THREE.MeshLambertMaterial({ color: 0x111827 })
+    );
+    hair.position.y = 2.08;
+    const glasses = new THREE.Mesh(
+      new THREE.BoxGeometry(0.46, 0.12, 0.15),
+      new THREE.MeshBasicMaterial({ color: 0x000000 })
+    );
+    glasses.position.set(0, 2.06, 0.26);
+    humanGroup.add(head, hair, glasses);
+
+    // Stylish Emerald Jacket Torso
+    const torso = new THREE.Mesh(
+      new THREE.BoxGeometry(0.75, 0.95, 0.42),
+      new THREE.MeshLambertMaterial({ color: 0x059669 })
+    );
+    torso.position.y = 1.25;
+    torso.castShadow = true;
+    humanGroup.add(torso);
+
+    // Animated Limbs
+    const limbGeo = new THREE.BoxGeometry(0.24, 0.78, 0.24);
+    const pantMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+    const leftLeg = new THREE.Mesh(limbGeo, pantMat);
+    leftLeg.position.set(-0.2, 0.4, 0);
+    const rightLeg = new THREE.Mesh(limbGeo, pantMat);
+    rightLeg.position.set(0.2, 0.4, 0);
+
+    const armMat = new THREE.MeshLambertMaterial({ color: 0x10b981 });
+    const leftArm = new THREE.Mesh(limbGeo, armMat);
+    leftArm.position.set(-0.52, 1.25, 0);
+    const rightArm = new THREE.Mesh(limbGeo, armMat);
+    rightArm.position.set(0.52, 1.25, 0);
+
+    humanGroup.add(leftLeg, rightLeg, leftArm, rightArm);
+    humanGroup.visible = false; // Starts inside the car
+    scene.add(humanGroup);
+
+    // --- Golden Checkpoint Rings (For Points & Nitro) ---
+    const checkpoints = [];
+    const cpCoords = [
+      { x: 0, z: 140, rot: 0 },
+      { x: 0, z: 320, rot: 0 },
+      { x: 160, z: 350, rot: Math.PI / 2 },
+      { x: 350, z: 180, rot: 0 },
+      { x: 350, z: -120, rot: 0 },
+      { x: 150, z: -350, rot: Math.PI / 2 },
+      { x: -180, z: -350, rot: Math.PI / 2 },
+      { x: -350, z: -100, rot: 0 },
+      { x: -350, z: 200, rot: 0 },
+      { x: -150, z: 0, rot: Math.PI / 2 }
+    ];
+
+    const ringGeo = new THREE.TorusGeometry(6.5, 0.45, 10, 28);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+    cpCoords.forEach(c => {
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.set(c.x, 4.5, c.z);
+      ring.rotation.y = c.rot;
+      scene.add(ring);
+      checkpoints.push({ mesh: ring, x: c.x, z: c.z, collectedAt: 0 });
+    });
+
+    // --- AI Village Traffic Cars ---
+    const trafficCars = [];
+    const trafficColors = [0xef4444, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x14b8a6];
+
+    for (let i = 0; i < 12; i++) {
+      const tGroup = new THREE.Group();
+      const col = trafficColors[i % trafficColors.length];
+      const tBody = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 0.8, 4.4),
+        new THREE.MeshLambertMaterial({ color: col })
+      );
+      tBody.position.y = 0.7;
+      tBody.castShadow = true;
+      const tTop = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.65, 2.2),
+        new THREE.MeshLambertMaterial({ color: 0x1e293b })
+      );
+      tTop.position.set(0, 1.35, -0.2);
+      tGroup.add(tBody, tTop);
+
+      const onZRoad = i % 2 === 0;
+      const laneOffset = (i % 4 < 2) ? 5.2 : -5.2;
+      const startPos = -500 + i * 90;
+
+      if (onZRoad) {
+        tGroup.position.set(laneOffset, 0, startPos);
+        tGroup.rotation.y = laneOffset > 0 ? 0 : Math.PI;
+      } else {
+        tGroup.position.set(startPos, 0, laneOffset);
+        tGroup.rotation.y = laneOffset > 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+
+      scene.add(tGroup);
+      trafficCars.push({
+        mesh: tGroup,
+        onZRoad,
+        dir: laneOffset > 0 ? 1 : -1,
+        speed: 0.45 + (i % 3) * 0.12,
+        nearMissCooldown: 0
+      });
+    }
+
+    // --- Game State & Physics Variables ---
+    let gameStarted = false;
+    let isWalkMode = false;
+    let cameraMode = 0; // 0: Chase, 1: Cockpit, 2: Action Side, 3: Top Drone
+    const camNames = ['Chase Cam', 'Driver Cockpit', 'Side Action Cam', 'Drone Top View'];
+    let isNight = false;
+
+    let carSpeed = 0;
+    let carAngle = 0;
+    let steerAngle = 0;
+    let nitro = 100;
     let score = 0;
-    let highScore = localStorage.getItem('snake_high') || 0;
-    let gameInterval = null;
-    let changingDirection = false;
+    let cpCount = 0;
+    let combo = 1;
+    let distanceScoreAccum = 0;
 
-    document.getElementById('highScore').textContent = highScore;
+    // Input State
+    const input = {
+      left: false,
+      right: false,
+      gas: false,
+      brake: false,
+      nitro: false,
+      drift: false
+    };
 
-    document.addEventListener('keydown', handleKeyPress);
+    window.addEventListener('keydown', e => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') input.gas = true;
+      if (k === 's' || k === 'arrowdown') input.brake = true;
+      if (k === 'a' || k === 'arrowleft') input.left = true;
+      if (k === 'd' || k === 'arrowright') input.right = true;
+      if (k === 'shift') input.nitro = true;
+      if (e.code === 'Space') input.drift = true;
+      if (k === 'c') switchCamera();
+      if (k === 'f') toggleWalkMode();
+    });
 
-    function startGame() {
-        resetGame();
-        if (gameInterval) clearInterval(gameInterval);
-        gameInterval = setInterval(main, 110);
+    window.addEventListener('keyup', e => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') input.gas = false;
+      if (k === 's' || k === 'arrowdown') input.brake = false;
+      if (k === 'a' || k === 'arrowleft') input.left = false;
+      if (k === 'd' || k === 'arrowright') input.right = false;
+      if (k === 'shift') input.nitro = false;
+      if (e.code === 'Space') input.drift = false;
+    });
+
+    function bindTouchButton(id, keyName) {
+      const btn = document.getElementById(id);
+      const press = (e) => {
+        e.preventDefault();
+        input[keyName] = true;
+        btn.classList.add('pressed');
+      };
+      const release = (e) => {
+        e.preventDefault();
+        input[keyName] = false;
+        btn.classList.remove('pressed');
+      };
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchcancel', release, { passive: false });
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
     }
 
-    function main() {
-        if (hasGameEnded()) {
-            clearInterval(gameInterval);
-            alert('Game Over! Score: ' + score);
-            startGame();
-            return;
-        }
-        changingDirection = false;
-        clearCanvas();
-        drawFood();
-        moveSnake();
-        drawSnake();
+    bindTouchButton('btn-left', 'left');
+    bindTouchButton('btn-right', 'right');
+    bindTouchButton('btn-gas', 'gas');
+    bindTouchButton('btn-brake', 'brake');
+    bindTouchButton('btn-nitro', 'nitro');
+    bindTouchButton('btn-drift', 'drift');
+
+    // --- Interactive Features ---
+    function startExperience() {
+      initAudio();
+      document.getElementById('start-modal').style.display = 'none';
+      gameStarted = true;
     }
 
-    function clearCanvas() {
-        ctx.fillStyle = '#010805';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    function switchCamera() {
+      cameraMode = (cameraMode + 1) % 4;
+      document.getElementById('cam-label').textContent = camNames[cameraMode];
+      showPopup(`🎥 ${camNames[cameraMode]}`);
     }
 
-    function drawSnake() {
-        snake.forEach((part, index) => {
-            ctx.fillStyle = index === 0 ? '#34d399' : '#059669';
-            ctx.shadowBlur = index === 0 ? 12 : 0;
-            ctx.shadowColor = '#10b981';
-            ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
-        });
-        ctx.shadowBlur = 0;
+    function changeCarColor() {
+      colorIdx = (colorIdx + 1) % carColors.length;
+      mainPaintMat.color.setHex(carColors[colorIdx]);
+      showPopup('🎨 গাড়ির কালার পরিবর্তন হয়েছে!');
     }
 
-    function moveSnake() {
-        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-        snake.unshift(head);
+    function toggleDayNight() {
+      isNight = !isNight;
+      if (isNight) {
+        scene.background.setHex(0x040b16);
+        scene.fog.color.setHex(0x040b16);
+        hemiLight.intensity = 0.22;
+        sunLight.intensity = 0.25;
+        showPopup('🌙 নাইট মোড চালু হয়েছে!');
+      } else {
+        scene.background.setHex(0x87ceeb);
+        scene.fog.color.setHex(0x87ceeb);
+        hemiLight.intensity = 0.75;
+        sunLight.intensity = 1.15;
+        showPopup('☀️ ডে মোড চালু হয়েছে!');
+      }
+    }
 
-        if (head.x === food.x && head.y === food.y) {
-            score += 10;
-            document.getElementById('score').textContent = score;
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('snake_high', highScore);
-                document.getElementById('highScore').textContent = highScore;
-            }
-            generateFood();
+    function toggleWalkMode() {
+      const btn = document.getElementById('walk-btn');
+      const modeLbl = document.getElementById('mode-label');
+
+      if (!isWalkMode) {
+        // Exit Car -> Place human right next to the Bugatti door
+        isWalkMode = true;
+        carSpeed = 0;
+        humanGroup.position.set(
+          carGroup.position.x - Math.cos(carAngle) * 3.2,
+          0,
+          carGroup.position.z + Math.sin(carAngle) * 3.2
+        );
+        humanGroup.rotation.y = carAngle;
+        humanGroup.visible = true;
+        btn.textContent = '🚗 গাড়িতে উঠুন (F)';
+        modeLbl.textContent = '🚶 চরিত্র মুভমেন্ট';
+        showPopup('🚶 গাড়ি থেকে নেমেছেন!');
+      } else {
+        // Enter Car
+        isWalkMode = false;
+        humanGroup.visible = false;
+        btn.textContent = '🚶 গাড়ি থেকে নামুন (F)';
+        modeLbl.textContent = '🚗 BUGATTI CHIRON';
+        showPopup('🚗 বুগাটিতে উঠেছেন!');
+      }
+    }
+
+    let popupTimeout = null;
+    function showPopup(text) {
+      const el = document.getElementById('bonus-popup');
+      el.textContent = text;
+      el.classList.add('show');
+      clearTimeout(popupTimeout);
+      popupTimeout = setTimeout(() => el.classList.remove('show'), 1600);
+    }
+
+    // --- Drift Smoke Particles ---
+    const smokeParticles = [];
+    const smokeGeo = new THREE.SphereGeometry(0.45, 6, 6);
+    const smokeMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.65 });
+
+    function spawnDriftSmoke() {
+      const s = new THREE.Mesh(smokeGeo, smokeMat.clone());
+      s.position.set(
+        carGroup.position.x + (Math.random() - 0.5) * 1.6,
+        0.3,
+        carGroup.position.z + (Math.random() - 0.5) * 1.6
+      );
+      scene.add(s);
+      smokeParticles.push({ mesh: s, life: 1.0 });
+    }
+
+    // --- Main Update Loop ---
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const now = performance.now();
+
+      if (gameStarted) {
+        if (isWalkMode) {
+          // --- 3D Human Character Walking Logic ---
+          const walkSpeed = input.nitro ? 24 : 14;
+          if (input.left) humanGroup.rotation.y += 2.6 * dt;
+          if (input.right) humanGroup.rotation.y -= 2.6 * dt;
+
+          let moveStep = 0;
+          if (input.gas) moveStep = walkSpeed * dt;
+          if (input.brake) moveStep = -walkSpeed * 0.6 * dt;
+
+          if (Math.abs(moveStep) > 0.001) {
+            humanGroup.position.x += Math.sin(humanGroup.rotation.y) * moveStep;
+            humanGroup.position.z += Math.cos(humanGroup.rotation.y) * moveStep;
+            const swing = Math.sin(now * 0.012) * 0.65;
+            leftLeg.rotation.x = swing;
+            rightLeg.rotation.x = -swing;
+            leftArm.rotation.x = -swing;
+            rightArm.rotation.x = swing;
+          } else {
+            leftLeg.rotation.x = 0;
+            rightLeg.rotation.x = 0;
+            leftArm.rotation.x = 0;
+            rightArm.rotation.x = 0;
+          }
+
+          updateEngineSound(0, false);
+
+          // Third-Person Camera following Walking Character
+          const camDist = 9;
+          const targetCamX = humanGroup.position.x - Math.sin(humanGroup.rotation.y) * camDist;
+          const targetCamZ = humanGroup.position.z - Math.cos(humanGroup.rotation.y) * camDist;
+          camera.position.lerp(new THREE.Vector3(targetCamX, 4.8, targetCamZ), 0.12);
+          camera.lookAt(humanGroup.position.x, 1.8, humanGroup.position.z);
+
         } else {
-            snake.pop();
-        }
-    }
+          // --- 3D Bugatti Driving Physics ---
+          const maxSpeed = (input.nitro && nitro > 0) ? 2.45 : 1.65;
+          const accel = (input.nitro && nitro > 0) ? 1.85 : 0.95;
 
-    function generateFood() {
-        food.x = Math.floor(Math.random() * tileCount);
-        food.y = Math.floor(Math.random() * tileCount);
-        snake.forEach(part => {
-            if (part.x === food.x && part.y === food.y) generateFood();
+          if (input.gas) {
+            carSpeed = Math.min(maxSpeed, carSpeed + accel * dt);
+          } else if (input.brake) {
+            carSpeed = Math.max(-0.65, carSpeed - 1.3 * dt);
+          } else {
+            carSpeed *= Math.pow(0.45, dt);
+          }
+
+          // Nitro consumption & regeneration
+          if (input.nitro && input.gas && nitro > 0) {
+            nitro = Math.max(0, nitro - 28 * dt);
+            flameMat.opacity = 0.85;
+          } else {
+            nitro = Math.min(100, nitro + 7 * dt);
+            flameMat.opacity = 0;
+          }
+
+          // Steering & Drift Physics
+          const steerFactor = input.drift ? 2.65 : 1.85;
+          steerAngle = 0;
+          if (input.left) steerAngle = 0.45;
+          if (input.right) steerAngle = -0.45;
+
+          if (Math.abs(carSpeed) > 0.04) {
+            const dirSign = carSpeed > 0 ? 1 : -1;
+            carAngle += steerAngle * steerFactor * dirSign * dt * Math.min(1, Math.abs(carSpeed) * 1.4);
+          }
+
+          // Move Car
+          const nextX = carGroup.position.x + Math.sin(carAngle) * carSpeed;
+          const nextZ = carGroup.position.z + Math.cos(carAngle) * carSpeed;
+
+          // Check House/Tree Collision
+          let collided = false;
+          for (const col of colliders) {
+            if (Math.hypot(nextX - col.x, nextZ - col.z) < col.radius + 1.8) {
+              collided = true;
+              break;
+            }
+          }
+
+          if (collided) {
+            carSpeed = -carSpeed * 0.45;
+            combo = 1;
+            showPopup('💥 ধাক্কা লেগেছে! সাবধানে চালান');
+          } else {
+            carGroup.position.x = Math.max(-920, Math.min(920, nextX));
+            carGroup.position.z = Math.max(-920, Math.min(920, nextZ));
+          }
+
+          carGroup.rotation.y = carAngle;
+
+          // Rotate Wheels & Front Steering Visual
+          wheels.forEach(w => {
+            w.group.children[0].rotation.x += carSpeed * 0.6;
+            if (w.front) {
+              w.group.rotation.y = steerAngle * 0.7;
+            }
+          });
+
+          // Drift Smoke & Bonus Points
+          if (input.drift && Math.abs(carSpeed) > 0.7 && Math.abs(steerAngle) > 0) {
+            spawnDriftSmoke();
+            score += Math.round(2 * combo);
+            if (Math.random() < 0.06) showPopup(`🛞 SUPER DRIFT! +${25 * combo}`);
+          }
+
+          // Continuous Good Driving Points
+          const kmh = Math.round(Math.abs(carSpeed) * 185);
+          if (kmh > 80) {
+            distanceScoreAccum += kmh * dt * 0.15;
+            if (distanceScoreAccum >= 10) {
+              score += Math.floor(distanceScoreAccum) * combo;
+              distanceScoreAccum = 0;
+            }
+            if (kmh > 220 && combo < 10 && Math.random() < 0.02) {
+              combo++;
+            }
+          }
+
+          updateEngineSound(carSpeed / 2.2, true);
+
+          // Update Camera based on Selected Mode
+          if (cameraMode === 0) {
+            // 0: Third-Person Chase Camera
+            const camX = carGroup.position.x - Math.sin(carAngle) * 11.5;
+            const camZ = carGroup.position.z - Math.cos(carAngle) * 11.5;
+            camera.position.lerp(new THREE.Vector3(camX, 4.4, camZ), 0.15);
+            camera.lookAt(
+              carGroup.position.x + Math.sin(carAngle) * 6,
+              1.3,
+              carGroup.position.z + Math.cos(carAngle) * 6
+            );
+          } else if (cameraMode === 1) {
+            // 1: Cockpit / Hood First-Person Driver Camera
+            const hoodX = carGroup.position.x + Math.sin(carAngle) * 0.6;
+            const hoodZ = carGroup.position.z + Math.cos(carAngle) * 0.6;
+            camera.position.set(hoodX, 1.55, hoodZ);
+            camera.lookAt(
+              carGroup.position.x + Math.sin(carAngle) * 30,
+              1.4,
+              carGroup.position.z + Math.cos(carAngle) * 30
+            );
+          } else if (cameraMode === 2) {
+            // 2: Side Action Camera
+            const sideX = carGroup.position.x + Math.cos(carAngle) * 6.5 - Math.sin(carAngle) * 3;
+            const sideZ = carGroup.position.z - Math.sin(carAngle) * 6.5 - Math.cos(carAngle) * 3;
+            camera.position.lerp(new THREE.Vector3(sideX, 2.0, sideZ), 0.2);
+            camera.lookAt(carGroup.position.x, 1.0, carGroup.position.z);
+          } else {
+            // 3: Top-Down Drone View
+            camera.position.lerp(
+              new THREE.Vector3(carGroup.position.x, 42, carGroup.position.z - 12),
+              0.12
+            );
+            camera.lookAt(carGroup.position.x, 0, carGroup.position.z);
+          }
+        }
+
+        // --- Checkpoints Collection ---
+        const activePos = isWalkMode ? humanGroup.position : carGroup.position;
+        checkpoints.forEach(cp => {
+          cp.mesh.rotation.z += 1.5 * dt;
+          if (now - cp.collectedAt > 8000) {
+            cp.mesh.visible = true;
+            if (Math.hypot(activePos.x - cp.x, activePos.z - cp.z) < 7.5) {
+              cp.collectedAt = now;
+              cp.mesh.visible = false;
+              cpCount++;
+              score += 250 * combo;
+              combo = Math.min(10, combo + 1);
+              nitro = 100;
+              playBonusTone();
+              showPopup(`⭐ CHECKPOINT! +${250 * combo} PTS`);
+            }
+          }
         });
-    }
 
-    function drawFood() {
-        ctx.fillStyle = '#fbbf24';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = '#fbbf24';
-        ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
-        ctx.shadowBlur = 0;
-    }
+        // --- Update AI Village Traffic & Near-Miss Bonus ---
+        trafficCars.forEach(tc => {
+          if (tc.onZRoad) {
+            tc.mesh.position.z += tc.speed * tc.dir;
+            if (tc.mesh.position.z > 650) tc.mesh.position.z = -650;
+            if (tc.mesh.position.z < -650) tc.mesh.position.z = 650;
+          } else {
+            tc.mesh.position.x += tc.speed * tc.dir;
+            if (tc.mesh.position.x > 650) tc.mesh.position.x = -650;
+            if (tc.mesh.position.x < -650) tc.mesh.position.x = 650;
+          }
 
-    function changeDir(direction) {
-        if (changingDirection) return;
-        if (direction === 'UP' && dy === 0) { dx = 0; dy = -1; changingDirection = true; }
-        if (direction === 'DOWN' && dy === 0) { dx = 0; dy = 1; changingDirection = true; }
-        if (direction === 'LEFT' && dx === 0) { dx = -1; dy = 0; changingDirection = true; }
-        if (direction === 'RIGHT' && dx === 0) { dx = 1; dy = 0; changingDirection = true; }
-    }
+          if (!isWalkMode) {
+            const dist = Math.hypot(
+              carGroup.position.x - tc.mesh.position.x,
+              carGroup.position.z - tc.mesh.position.z
+            );
+            if (dist < 3.2) {
+              carSpeed = -0.45;
+              combo = 1;
+              showPopup('💥 ট্রাফিক কারে ধাক্কা!');
+            } else if (dist < 7.2 && Math.abs(carSpeed) > 0.9 && now > tc.nearMissCooldown) {
+              tc.nearMissCooldown = now + 2500;
+              score += 100 * combo;
+              playBonusTone();
+              showPopup(`🔥 NEAR MISS! +${100 * combo}`);
+            }
+          }
+        });
 
-    function handleKeyPress(event) {
-        const keyPressed = event.keyCode;
-        if (keyPressed === 37 && dx === 0) { dx = -1; dy = 0; changingDirection = true; }
-        if (keyPressed === 38 && dy === 0) { dx = 0; dy = -1; changingDirection = true; }
-        if (keyPressed === 39 && dx === 0) { dx = 1; dy = 0; changingDirection = true; }
-        if (keyPressed === 40 && dy === 0) { dx = 0; dy = 1; changingDirection = true; }
-    }
-
-    function hasGameEnded() {
-        const head = snake[0];
-        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) return true;
-        for (let i = 4; i < snake.length; i++) {
-            if (snake[i].x === head.x && snake[i].y === head.y) return true;
+        // Update Drift Smoke Particles
+        for (let i = smokeParticles.length - 1; i >= 0; i--) {
+          const sp = smokeParticles[i];
+          sp.life -= 1.8 * dt;
+          sp.mesh.position.y += 1.2 * dt;
+          sp.mesh.scale.addScalar(1.5 * dt);
+          sp.mesh.material.opacity = Math.max(0, sp.life * 0.6);
+          if (sp.life <= 0) {
+            scene.remove(sp.mesh);
+            smokeParticles.splice(i, 1);
+          }
         }
-        return false;
+
+        // Update HUD Elements
+        const kmhDisplay = isWalkMode ? 0 : Math.round(Math.abs(carSpeed) * 185);
+        document.getElementById('speed-val').textContent = kmhDisplay;
+        document.getElementById('score-val').textContent = score;
+        document.getElementById('cp-val').textContent = cpCount;
+        document.getElementById('combo-val').textContent = `x${combo}`;
+        document.getElementById('nitro-pct').textContent = `${Math.round(nitro)}%`;
+        document.getElementById('nitro-fill').style.width = `${nitro}%`;
+      }
+
+      renderer.render(scene, camera);
     }
 
-    function resetGame() {
-        snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
-        dx = 1;
-        dy = 0;
-        score = 0;
-        document.getElementById('score').textContent = score;
-        generateFood();
-    }
-
-    startGame();
-</script>
-
+    animate();
+  </script>
 </body>
 </html>
